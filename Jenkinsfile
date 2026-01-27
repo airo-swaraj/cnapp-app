@@ -19,7 +19,6 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 sh '''
-                ls
                 docker build -t $IMAGE_NAME:latest .
                 '''
             }
@@ -30,6 +29,18 @@ pipeline {
                 sh '''
                 docker push $IMAGE_NAME:latest
                 '''
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                withCredentials([file(credentialsId: 'kubeconfig-dev', variable: 'KUBECONFIG_FILE')]) {
+                    sh '''
+                    export KUBECONFIG=$KUBECONFIG_FILE
+                    kubectl apply -f k8s/
+                    kubectl rollout restart deployment notes-app
+                    '''
+                }
             }
         }
     }
