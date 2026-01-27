@@ -31,17 +31,5 @@ pipeline {
                 '''
             }
         }
-
-        stage('Deploy to Kubernetes') {
-            steps {
-                withCredentials([file(credentialsId: 'kubeconfig-dev', variable: 'KUBECONFIG_FILE')]) {
-                    sh '''
-                    export KUBECONFIG=$KUBECONFIG_FILE
-                    kubectl apply -f k8s/
-                    kubectl rollout restart deployment notes-app
-                    '''
-                }
-            }
-        }
     }
 }
