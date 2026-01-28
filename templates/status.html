@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Status</title>
+  <style>
+    body { font-family:Poppins; background:#eef2f7; text-align:center; }
+    .grid {
+      display:grid; grid-template-columns:repeat(2,1fr);
+      gap:20px; width:60%; margin:40px auto;
+    }
+    .card {
+      background:white; padding:20px; border-radius:10px;
+      box-shadow:0 4px 10px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+
+<h1>System Status Dashboard</h1>
+
+<div class="grid">
+  <div class="card">Backend API: <b style="color:green">Running</b></div>
+  <div class="card">Docker Image: <b style="color:green">Built</b></div>
+  <div class="card">Kubernetes Pods: <b style="color:green">Healthy</b></div>
+  <div class="card">Jenkins Pipeline: <b style="color:green">Successful</b></div>
+  <div class="card">Lacework Security: <b style="color:orange">Pending Activation</b></div>
+  <div class="card">Application Version: <b>v1.0.0</b</div>
+</div>
+
+<a href="/">⬅ Back to Home</a>
+
+</body>
+</html>

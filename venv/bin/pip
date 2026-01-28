@@ -1,4 +1,4 @@
-#!/home/swaraj/cnapp-app/backend/venv/bin/python3
+#!/home/swaraj/cnapp-app/app-code/venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys
