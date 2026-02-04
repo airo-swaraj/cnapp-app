@@ -48,9 +48,12 @@ pipeline {
                     string(credentialsId: 'LW_SECRET_KEY', variable: 'LW_SECRET')
                 ]) {
                     sh '''
+
+                    sleep 45
+                    
                     # Note: lacework CLI expects: <registry> <repository> <tag>
                     # For Docker Hub, registry is "docker.io"
-                    registry="docker-image-repo"
+                    registry="docker.io"
                     repository="$IMAGE_NAME"
                     tag="${BUILD_NUMBER}"
 
@@ -62,6 +65,7 @@ pipeline {
                         -a $LACEWORK_ACCOUNT -k $LW_ACCESS -s $LW_SECRET \
                         --fail_on_severity high \
                         --poll
+                        --details
                     '''
                 }
             }
