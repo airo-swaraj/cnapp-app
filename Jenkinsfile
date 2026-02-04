@@ -8,6 +8,7 @@ pipeline {
         AWS_REGION = "ap-south-1"
         CLUSTER_NAME = "cnapp-cluster"
 
+        # Your Lacework account (tenant) — from https://<ACCOUNT>.lacework.net
         LACEWORK_ACCOUNT = "719551"
     }
 
@@ -29,24 +30,28 @@ pipeline {
             }
         }
 
-        // ⭐⭐⭐ MOST IMPORTANT STAGE ⭐⭐⭐
         stage('Scan Image with Lacework') {
             steps {
                 withCredentials([
+                    // use the exact credential IDs from your Jenkins
                     string(credentialsId: 'LACEWORK-ACCESS-KEY', variable: 'LW_ACCESS'),
-                    string(credentialsId: 'LW_SECRET_KEY', variable: 'LW_SECRET')
+                    string(credentialsId: 'Lacework-secret-key', variable: 'LW_SECRET')
                 ]) {
-
                     sh '''
+                    # Note: lacework CLI expects: <registry> <repository> <tag>
+                    # For Docker Hub, registry is "docker.io"
+                    registry="docker.io"
+                    repository="$IMAGE_NAME"
+                    tag="${BUILD_NUMBER}"
 
-                    export LW_ACCOUNT=$LACEWORK_ACCOUNT
-                    export LW_API_KEY=$LW_ACCESS
-                    export LW_API_SECRET=$LW_SECRET
-
-                    # Scan container BEFORE push
+                    # run the scan, wait until completed (--poll), fail on severity >= HIGH
                     lacework vulnerability container scan \
-                        $IMAGE_NAME:${BUILD_NUMBER} \
-                        --fail-on-high
+                        $registry \
+                        $repository \
+                        $tag \
+                        -a $LACEWORK_ACCOUNT -k $LW_ACCESS -s $LW_SECRET \
+                        --fail_on_severity high \
+                        --poll
                     '''
                 }
             }
@@ -85,9 +90,7 @@ pipeline {
 
     post {
         always {
-            sh '''
-            rm -f $KUBECONFIG
-            '''
+            sh 'rm -f $KUBECONFIG'
         }
     }
 }
