@@ -8,7 +8,7 @@ pipeline {
         AWS_REGION = "ap-south-1"
         CLUSTER_NAME = "cnapp-cluster"
 
-        # Your Lacework account (tenant) — from https://<ACCOUNT>.lacework.net
+        // Your Lacework account (tenant) — from https://<ACCOUNT>.lacework.net
         LACEWORK_ACCOUNT = "719551"
     }
 
