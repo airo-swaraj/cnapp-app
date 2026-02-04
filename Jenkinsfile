@@ -83,8 +83,6 @@ pipeline {
                         $repository \
                         $tag \
                         -a $LACEWORK_ACCOUNT -k $LW_ACCESS -s $LW_SECRET \
-                        --poll \
-                        --details
                     '''
                 }
             }
