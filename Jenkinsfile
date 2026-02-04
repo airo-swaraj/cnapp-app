@@ -30,6 +30,16 @@ pipeline {
             }
         }
 
+        
+
+        stage('Push Docker Image') {
+            steps {
+                sh '''
+                docker push $IMAGE_NAME:${BUILD_NUMBER}
+                '''
+            }
+        }
+        
         stage('Scan Image with Lacework') {
             steps {
                 withCredentials([
@@ -56,15 +66,7 @@ pipeline {
                 }
             }
         }
-
-        stage('Push Docker Image') {
-            steps {
-                sh '''
-                docker push $IMAGE_NAME:${BUILD_NUMBER}
-                '''
-            }
-        }
-
+        
         stage('Configure Kubeconfig') {
             steps {
                 sh '''
