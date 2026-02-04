@@ -30,8 +30,6 @@ pipeline {
             }
         }
 
-        
-
         stage('Push Docker Image') {
             steps {
                 sh '''
@@ -39,9 +37,7 @@ pipeline {
                 '''
             }
         }
-        
-        
-        
+
         stage('Configure Kubeconfig') {
             steps {
                 sh '''
@@ -63,7 +59,7 @@ pipeline {
                 '''
             }
         }
-    }
+
         stage('Scan Image with Lacework') {
             steps {
                 withCredentials([
@@ -87,13 +83,15 @@ pipeline {
                         $repository \
                         $tag \
                         -a $LACEWORK_ACCOUNT -k $LW_ACCESS -s $LW_SECRET \
-                        --poll
+                        --poll \
                         --details
                     '''
                 }
             }
-        }       
-         
+        }
+
+    }
+
     post {
         always {
             sh 'rm -f $KUBECONFIG'
