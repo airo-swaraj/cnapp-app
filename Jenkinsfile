@@ -7,6 +7,8 @@ pipeline {
         KUBECONFIG = "${WORKSPACE}/kubeconfig"
         AWS_REGION = "ap-south-1"
         CLUSTER_NAME = "cnapp-cluster"
+
+        LACEWORK_ACCOUNT = "719551"
     }
 
     stages {
@@ -24,6 +26,34 @@ pipeline {
                 sh '''
                 docker build -t $IMAGE_NAME:${BUILD_NUMBER} .
                 '''
+            }
+        }
+
+        // ⭐⭐⭐ MOST IMPORTANT STAGE ⭐⭐⭐
+        stage('Scan Image with Lacework') {
+            steps {
+                withCredentials([
+                    string(credentialsId: 'LACEWORK-ACCESS-KEY', variable: 'LW_ACCESS'),
+                    string(credentialsId: 'Lacework-secret-key', variable: 'LW_SECRET')
+                ]) {
+
+                    sh '''
+                    # Install CLI if not present
+                    if ! command -v lacework &> /dev/null
+                    then
+                        curl -s https://raw.githubusercontent.com/lacework/go-sdk/main/cli/install.sh | sudo bash
+                    fi
+
+                    export LW_ACCOUNT=$LACEWORK_ACCOUNT
+                    export LW_API_KEY=$LW_ACCESS
+                    export LW_API_SECRET=$LW_SECRET
+
+                    # Scan container BEFORE push
+                    lacework vulnerability container scan \
+                        $IMAGE_NAME:${BUILD_NUMBER} \
+                        --fail-on-high
+                    '''
+                }
             }
         }
 
@@ -66,4 +96,3 @@ pipeline {
         }
     }
 }
-
