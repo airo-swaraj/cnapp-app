@@ -73,7 +73,7 @@ pipeline {
                     
                     # Note: lacework CLI expects: <registry> <repository> <tag>
                     # For Docker Hub, registry is "docker.io"
-                    registry="docker.io"
+                    registry="index.docker.io"
                     repository="$IMAGE_NAME"
                     tag="${BUILD_NUMBER}"
 
