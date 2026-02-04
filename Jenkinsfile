@@ -35,7 +35,7 @@ pipeline {
                 withCredentials([
                     // use the exact credential IDs from your Jenkins
                     string(credentialsId: 'LACEWORK-ACCESS-KEY', variable: 'LW_ACCESS'),
-                    string(credentialsId: 'Lacework-secret-key', variable: 'LW_SECRET')
+                    string(credentialsId: 'LW_SECRET_KEY', variable: 'LW_SECRET')
                 ]) {
                     sh '''
                     # Note: lacework CLI expects: <registry> <repository> <tag>
