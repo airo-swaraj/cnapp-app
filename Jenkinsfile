@@ -7,8 +7,6 @@ pipeline {
         KUBECONFIG = "${WORKSPACE}/kubeconfig"
         AWS_REGION = "ap-south-1"
         CLUSTER_NAME = "cnapp-cluster"
-
-        // Your Lacework account (tenant) — from https://<ACCOUNT>.lacework.net
         LACEWORK_ACCOUNT = "719551"
     }
 
@@ -17,6 +15,7 @@ pipeline {
         stage('Docker Login') {
             steps {
                 sh '''
+                set -e
                 echo $DOCKERHUB_PSW | docker login -u $DOCKERHUB_USR --password-stdin
                 '''
             }
@@ -25,15 +24,39 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 sh '''
+                set -e
                 docker build -t $IMAGE_NAME:${BUILD_NUMBER} .
+                docker tag $IMAGE_NAME:${BUILD_NUMBER} $IMAGE_NAME:latest
                 '''
+            }
+        }
+
+        // ⭐ Scan BEFORE push & deploy
+        stage('Scan Image with Lacework') {
+            steps {
+                withCredentials([
+                    string(credentialsId: 'LACEWORK-ACCESS-KEY', variable: 'LW_ACCESS'),
+                    string(credentialsId: 'LACEWORK-SECRET-KEY', variable: 'LW_SECRET')
+                ]) {
+                    sh '''
+                    sleep 30
+
+                    lacework vulnerability container scan \
+                        index.docker.io \
+                        $IMAGE_NAME \
+                        ${BUILD_NUMBER} \
+                        -a $LACEWORK_ACCOUNT -k $LW_ACCESS -s $LW_SECRET
+                    '''
+                }
             }
         }
 
         stage('Push Docker Image') {
             steps {
                 sh '''
+                set -e
                 docker push $IMAGE_NAME:${BUILD_NUMBER}
+                docker push $IMAGE_NAME:latest
                 '''
             }
         }
@@ -41,6 +64,7 @@ pipeline {
         stage('Configure Kubeconfig') {
             steps {
                 sh '''
+                set -e
                 aws eks update-kubeconfig \
                   --region $AWS_REGION \
                   --name $CLUSTER_NAME \
@@ -52,42 +76,14 @@ pipeline {
         stage('Deploy to EKS') {
             steps {
                 sh '''
+                set -e
                 kubectl set image deployment/notes-app \
-                  notes-app=$IMAGE_NAME:${BUILD_NUMBER}
+                notes-app=$IMAGE_NAME:${BUILD_NUMBER}
 
                 kubectl rollout status deployment/notes-app
                 '''
             }
         }
-
-        stage('Scan Image with Lacework') {
-            steps {
-                withCredentials([
-                    // use the exact credential IDs from your Jenkins
-                    string(credentialsId: 'LACEWORK-ACCESS-KEY', variable: 'LW_ACCESS'),
-                    string(credentialsId: 'LW_SECRET_KEY', variable: 'LW_SECRET')
-                ]) {
-                    sh '''
-
-                    sleep 45
-                    
-                    # Note: lacework CLI expects: <registry> <repository> <tag>
-                    # For Docker Hub, registry is "docker.io"
-                    registry="index.docker.io"
-                    repository="$IMAGE_NAME"
-                    tag="${BUILD_NUMBER}"
-
-                    # run the scan, wait until completed (--poll), fail on severity >= HIGH
-                    lacework vulnerability container scan \
-                        $registry \
-                        $repository \
-                        $tag \
-                        -a $LACEWORK_ACCOUNT -k $LW_ACCESS -s $LW_SECRET \
-                    '''
-                }
-            }
-        }
-
     }
 
     post {
