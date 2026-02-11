@@ -60,19 +60,19 @@ pipeline {
                   --resource-group $RESOURCE_GROUP \
                   --name $AKS_CLUSTER \
                   --overwrite-existing
-
-                if kubectl get deployment notes-app; then
-                  echo "Updating existing deployment..."
-                  kubectl set image deployment/notes-app notes-app=$IMAGE_NAME:${BUILD_NUMBER}
-                else
-                  echo "Creating new deployment..."
-                  kubectl create deployment notes-app --image=$IMAGE_NAME:${BUILD_NUMBER}
-                  kubectl expose deployment notes-app --type=LoadBalancer --port=5000 --target-port=5000
-                fi
-
+        
+                # Apply deployment and service files
+                kubectl apply -f k8s/deployment.yaml
+                kubectl apply -f k8s/service.yaml
+        
+                # Update deployment image
+                kubectl set image deployment/notes-app notes-app=$IMAGE_NAME:${BUILD_NUMBER}
+        
+                # Wait for deployment to roll out
                 kubectl rollout status deployment/notes-app
                 '''
             }
         }
+
     }
 }
