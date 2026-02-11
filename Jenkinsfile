@@ -31,7 +31,7 @@ pipeline {
 
         stage('Login to ACR') {
             steps {
-                sh '''az acr login --name $ACR_NAME'''
+                sh 'az acr login --name $ACR_NAME'
             }
         }
 
@@ -60,19 +60,20 @@ pipeline {
                   --resource-group $RESOURCE_GROUP \
                   --name $AKS_CLUSTER \
                   --overwrite-existing
-        
+
                 # Apply deployment and service files
                 kubectl apply -f k8s/deployment.yaml
                 kubectl apply -f k8s/service.yaml
-        
-                # Update deployment image
-                kubectl set image deployment/notes-app notes-app=$IMAGE_NAME:${BUILD_NUMBER}
-        
-                # Wait for deployment to roll out
+
+                # Update deployment image if it exists
+                if kubectl get deployment notes-app; then
+                  kubectl set image deployment/notes-app notes-app=$IMAGE_NAME:${BUILD_NUMBER}
+                fi
+
+                # Wait for deployment rollout
                 kubectl rollout status deployment/notes-app
                 '''
             }
         }
-
     }
 }
