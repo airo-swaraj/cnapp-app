@@ -1,11 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: notes-service
+  name: notes-app
 spec:
   type: LoadBalancer
+  loadBalancerIP: 20.22.153.46
+  ports:
+    - port: 5000
+      targetPort: 5000
   selector:
     app: notes-app
-  ports:
-    - port: 80
-      targetPort: 5000
+
