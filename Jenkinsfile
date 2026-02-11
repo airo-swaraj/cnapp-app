@@ -6,7 +6,7 @@ pipeline {
         RESOURCE_GROUP = "Cnapp-RG"
         AKS_CLUSTER = "myAKS-cluster"
         ACR_NAME = "cnappacr2026"
-        TENANT_ID = "981439d1-88ac-4c7c-bd5df66bc0f4c"
+        TENANT_ID = "981439d1-88ac-4c7c-bd5d-d5df66bc0f4c"
     }
 
     stages {
@@ -31,7 +31,7 @@ pipeline {
 
         stage('Login to ACR') {
             steps {
-                sh 'az acr login --name $ACR_NAME'
+                sh '''az acr login --name $ACR_NAME'''
             }
         }
 
@@ -61,16 +61,15 @@ pipeline {
                   --name $AKS_CLUSTER \
                   --overwrite-existing
 
-                # Apply deployment
-                kubectl apply -f k8s/deployment.yaml
+                if kubectl get deployment notes-app; then
+                  echo "Updating existing deployment..."
+                  kubectl set image deployment/notes-app notes-app=$IMAGE_NAME:${BUILD_NUMBER}
+                else
+                  echo "Creating new deployment..."
+                  kubectl create deployment notes-app --image=$IMAGE_NAME:${BUILD_NUMBER}
+                  kubectl expose deployment notes-app --type=LoadBalancer --port=5000 --target-port=5000
+                fi
 
-                # Apply service
-                kubectl apply -f k8s/service.yaml
-
-                # Update image for deployment (optional if you want rolling updates)
-                kubectl set image deployment/notes-app notes-app=$IMAGE_NAME:${BUILD_NUMBER}
-
-                # Wait for rollout
                 kubectl rollout status deployment/notes-app
                 '''
             }
