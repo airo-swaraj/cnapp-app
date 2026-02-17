@@ -53,6 +53,38 @@ pipeline {
             }
         }
 
+        // ✅ ONLY NEW STAGE ADDED BELOW
+        stage('Lacework Scan') {
+            steps {
+                withCredentials([
+                    string(credentialsId: 'LW_API_KEY', variable: 'LW_API_KEY'),
+                    string(credentialsId: 'LW_API_SECRET', variable: 'LW_API_SECRET')
+                ]) {
+                    sh '''
+                    set +e
+
+                    echo "Configuring Lacework CLI..."
+
+                    lacework configure \
+                      --account 719551 \
+                      --api_key $LW_API_KEY \
+                      --api_secret $LW_API_SECRET \
+                      --noninteractive
+
+                    echo "Triggering container scan..."
+
+                    lacework vulnerability container scan \
+                      $IMAGE_NAME:${BUILD_NUMBER} \
+                      --details
+
+                    echo "Lacework scan submitted successfully ✅"
+
+                    exit 0
+                    '''
+                }
+            }
+        }
+
         stage('Deploy to AKS') {
             steps {
                 sh '''
@@ -61,16 +93,13 @@ pipeline {
                   --name $AKS_CLUSTER \
                   --overwrite-existing
 
-                # Apply deployment and service files
                 kubectl apply -f k8s/deployment.yaml
                 kubectl apply -f k8s/service.yaml
 
-                # Update deployment image if it exists
                 if kubectl get deployment notes-app; then
                   kubectl set image deployment/notes-app notes-app=$IMAGE_NAME:${BUILD_NUMBER}
                 fi
 
-                # Wait for deployment rollout
                 kubectl rollout status deployment/notes-app
                 '''
             }
